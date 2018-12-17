@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yueqian.base.mapper.MailverifyMapper" >
+  <resultMap id="BaseResultMap" type="com.yueqian.base.domain.MailVerify" >
+    <id column="id" property="id" jdbcType="BIGINT" />
+    <result column="uuid" property="uuid" jdbcType="VARCHAR" />
+    <result column="email" property="email" jdbcType="VARCHAR" />
+    <result column="sendDate" property="sendDate" jdbcType="DATE" />
+    <result column="userinfo_id" property="userinfoId" jdbcType="BIGINT" />
+  </resultMap>
+
+  <insert id="insert"  useGeneratedKeys="true" keyProperty="id" >
+    insert into `mailVerify` (uuid, email, sendDate, 
+      userinfo_id)
+    values (#{uuid,jdbcType=VARCHAR}, #{email,jdbcType=VARCHAR}, #{sendDate,jdbcType=DATE}, 
+      #{userinfoId,jdbcType=BIGINT})
+  </insert>
+ 
+  <select id="selectByUUID" resultMap="BaseResultMap"  >
+    select id, uuid, email, sendDate, userinfo_id
+    from `mailVerify`
+    where uuid = #{uuid}
+  </select>
+
+</mapper>

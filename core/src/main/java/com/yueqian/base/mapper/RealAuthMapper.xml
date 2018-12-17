@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yueqian.base.mapper.RealAuthMapper">
+	<resultMap id="BaseResultMap"
+		type="com.yueqian.base.domain.RealAuth">
+		<id column="id" property="id" jdbcType="BIGINT" />
+		<result column="realName" property="realName"
+			jdbcType="VARCHAR" />
+		<result column="sex" property="sex" jdbcType="TINYINT" />
+		<result column="bornDate" property="bornDate"
+			jdbcType="VARCHAR" />
+		<result column="idNumber" property="idNumber"
+			jdbcType="VARCHAR" />
+		<result column="address" property="address" jdbcType="VARCHAR" />
+		<result column="state" property="state" jdbcType="TINYINT" />
+		<result column="image1" property="image1" jdbcType="VARCHAR" />
+		<result column="image2" property="image2" jdbcType="VARCHAR" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="auditTime" property="auditTime"
+			jdbcType="TIMESTAMP" />
+		<result column="applyTime" property="applyTime"
+			jdbcType="TIMESTAMP" />
+	</resultMap>
+	<resultMap type="com.yueqian.base.domain.RealAuth" id="FullResultMap" extends="BaseResultMap">
+		<association property="applier"
+			javaType="com.yueqian.base.domain.Logininfo" columnPrefix="ap_">
+			<id column="id" property="id" />
+			<result column="username" property="username" />
+		</association>
+
+		<association property="auditor"
+			javaType="com.yueqian.base.domain.Logininfo" columnPrefix="au_">
+			<id column="id" property="id" />
+			<result column="username" property="username" />
+		</association>
+	</resultMap>
+
+	<insert id="insert"
+		parameterType="com.yueqian.base.domain.RealAuth"
+		useGeneratedKeys="true" keyProperty="id">
+		insert into realauth (realName, sex, bornDate,
+		idNumber, address, state,
+		image1, image2, remark,
+		auditTime, applyTime, auditor_id,
+		applier_id)
+		values (#{realName,jdbcType=VARCHAR}, #{sex,jdbcType=TINYINT},
+		#{bornDate,jdbcType=VARCHAR},
+		#{idNumber,jdbcType=VARCHAR}, #{address,jdbcType=VARCHAR}, #{state,jdbcType=TINYINT},
+		#{image1,jdbcType=VARCHAR}, #{image2,jdbcType=VARCHAR},
+		#{remark,jdbcType=VARCHAR},
+		#{auditTime,jdbcType=TIMESTAMP}, #{applyTime,jdbcType=TIMESTAMP}, #{auditor.id,jdbcType=BIGINT},
+		#{applier.id,jdbcType=BIGINT})
+	</insert>
+	<update id="updateByPrimaryKey"
+		parameterType="com.yueqian.base.domain.RealAuth">
+		update realauth
+		set realName = #{realName,jdbcType=VARCHAR},
+		sex = #{sex,jdbcType=TINYINT},
+		bornDate = #{bornDate,jdbcType=VARCHAR},
+		idNumber = #{idNumber,jdbcType=VARCHAR},
+		address = #{address,jdbcType=VARCHAR},
+		state = #{state,jdbcType=TINYINT},
+		image1 = #{image1,jdbcType=VARCHAR},
+		image2 = #{image2,jdbcType=VARCHAR},
+		remark = #{remark,jdbcType=VARCHAR},
+		auditTime = #{auditTime,jdbcType=TIMESTAMP},
+		applyTime = #{applyTime,jdbcType=TIMESTAMP},
+		auditor_id = #{auditor.id,jdbcType=BIGINT},
+		applier_id = #{applier.id,jdbcType=BIGINT}
+		where id = #{id,jdbcType=BIGINT}
+	</update>
+
+	<sql id="base_column">
+		id, realName, sex, bornDate, idNumber, address, state,
+		image1, image2, remark, auditTime, applyTime 
+	</sql>
+		
+	<sql id="full_column">
+		r.id, r.realName, r.sex, r.bornDate, r.idNumber, r.address, r.state,
+		r.image1, r.image2, r.remark,
+		r.auditTime, r.applyTime , ap.id as ap_id ,ap.username as ap_username ,
+		au.id as au_id ,au.username as au_username
+	</sql>
+
+	<!-- 高级查询的条件 -->
+	<sql id="condition">
+		<where>
+			<if test="state>-1">
+				AND r.state = #{state}
+			</if>
+			<if test="beginTime!=null">
+				AND r.applyTime &gt;= #{beginTime}
+			</if>
+			<if test="endTime!=null">
+				AND r.applyTime &lt;= #{endTime}
+			</if>
+		</where>
+	</sql>
+	
+	<select id="selectByPrimaryKey" resultMap="FullResultMap"
+		parameterType="java.lang.Long">
+		select <include refid="full_column" />
+		from realauth r JOIN logininfo ap ON r.applier_id = ap.id 
+		LEFT JOIN logininfo au ON r.auditor_id =au.id
+		where r.id = #{id,jdbcType=BIGINT}
+	</select>
+
+	<select id="selectAll" resultMap="FullResultMap">
+		select <include refid="full_column" />
+		from realAuth r JOIN logininfo ap ON r.applier_id = ap.id
+		LEFT JOIN logininfo au ON r.auditor_id =au.id
+	</select>
+	
+	<select id="queryForCount" resultType="int">
+		select count(r.id) from realauth r
+		<include refid="condition"></include>
+	</select>
+	
+	<select id="query" resultMap="FullResultMap">
+		select <include refid="full_column" />
+		from realAuth r JOIN logininfo ap ON r.applier_id = ap.id
+		LEFT JOIN logininfo au ON r.auditor_id =au.id
+		<include refid="condition"></include>
+		limit #{start},#{pageSize}
+	</select>
+
+</mapper>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yueqian.base.mapper.VedioAuthMapper">
+	<resultMap id="BaseResultMap"
+		type="com.yueqian.base.domain.VedioAuth">
+		<id column="id" property="id" jdbcType="BIGINT" />
+		<result column="state" property="state" jdbcType="TINYINT" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="auditTime" property="auditTime"
+			jdbcType="TIMESTAMP" />
+		<result column="applyTime" property="applyTime"
+			jdbcType="TIMESTAMP" />
+
+		<association property="applier"
+			javaType="com.yueqian.base.domain.Logininfo" columnPrefix="ap_">
+			<id column="id" property="id" />
+			<result column="username" property="username" />
+		</association>
+		<association property="auditor"
+			javaType="com.yueqian.base.domain.Logininfo" columnPrefix="au_">
+			<id column="id" property="id" />
+			<result column="username" property="username" />
+		</association>
+	</resultMap>
+
+	<insert id="insert" useGeneratedKeys="true" keyProperty="id">
+		insert
+		into `vedioauth` (state, remark, auditTime,
+		applyTime, auditor_id,
+		applier_id
+		)
+		values (#{state,jdbcType=TINYINT},
+		#{remark,jdbcType=VARCHAR},
+		#{auditTime,jdbcType=TIMESTAMP},
+		#{applyTime,jdbcType=TIMESTAMP}, #{auditor.id,jdbcType=BIGINT},
+		#{applier.id,jdbcType=BIGINT}
+		)
+	</insert>
+
+	<sql id="base_column">
+		v.id, v.state, v.remark, v.auditTime, v.applyTime, ap.id as
+		ap_id ,ap.username as ap_username ,
+		au.id as au_id ,au.username as
+		au_username
+	</sql>
+
+	<!-- 高级查询的条件 -->
+	<sql id="condition">
+		<where>
+			<if test="state>-1">
+				AND v.state = #{state}
+			</if>
+			<if test="beginTime!=null">
+				AND v.applyTime &gt;= #{beginTime}
+			</if>
+			<if test="endTime!=null">
+				AND v.applyTime &lt;= #{endTime}
+			</if>
+		</where>
+	</sql>
+	
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
+		parameterType="java.lang.Long">
+		select <include refid="base_column"/>
+		from `vedioauth` v JOIN logininfo ap ON v.applier_id = ap.id 
+		JOIN logininfo au ON v.auditor_id =au.id
+		where id = #{id,jdbcType=BIGINT}
+	</select>
+
+	<select id="queryForCount" resultType="int">
+		select count(v.id) from vedioauth v
+		<include refid="condition"/>
+	</select>
+	
+	<select id="query" resultMap="BaseResultMap">
+		select <include refid="base_column"/>
+		from `vedioauth` v JOIN logininfo ap ON v.applier_id = ap.id 
+		JOIN logininfo au ON v.auditor_id =au.id
+		<include refid="condition"/>
+		limit #{start},#{pageSize}
+	</select>
+</mapper>

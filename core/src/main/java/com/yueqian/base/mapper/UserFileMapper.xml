@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yueqian.base.mapper.UserFileMapper">
+
+	<resultMap id="BaseResultMap" type="com.yueqian.base.domain.UserFile" >
+		<id column="id" property="id" jdbcType="BIGINT" />
+		<result column="image" property="image" jdbcType="VARCHAR" />
+		<result column="state" property="state" jdbcType="TINYINT" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="auditTime" property="auditTime"
+			jdbcType="TIMESTAMP" />
+		<result column="applyTime" property="applyTime"
+			jdbcType="TIMESTAMP" />
+		<result column="score" property="score" jdbcType="TINYINT" />
+		
+		<association property="applier" javaType="com.yueqian.base.domain.Logininfo" columnPrefix="ap_">
+			<id column="id" property="id"/>
+			<result column="username" property="username"/>
+		</association>
+		<association property="fileType" javaType="com.yueqian.base.domain.SystemDictionaryItem" columnPrefix="sd_">
+			<id column="id" property="id"/>
+			<result column="title" property="title"/>
+		</association>
+	</resultMap>
+	
+	<resultMap type="com.yueqian.base.domain.UserFile" id="FullResultMap" extends="BaseResultMap">
+		<association property="auditor" javaType="com.yueqian.base.domain.Logininfo" columnPrefix="au_">
+			<id column="id" property="id"/>
+			<result column="username" property="username"/>
+		</association>
+	</resultMap>
+	
+	<resultMap id="UserListResultMap" type="com.yueqian.base.domain.UserFile" >
+		<id column="id" property="id" jdbcType="BIGINT" />
+		<result column="image" property="image" jdbcType="VARCHAR" />
+		<result column="state" property="state" jdbcType="TINYINT" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="auditTime" property="auditTime"
+			jdbcType="TIMESTAMP" />
+		<result column="applyTime" property="applyTime"
+			jdbcType="TIMESTAMP" />
+		<result column="score" property="score" jdbcType="TINYINT" />
+		<association property="fileType" javaType="com.yueqian.base.domain.SystemDictionaryItem" columnPrefix="sd_">
+			<id column="id" property="id"/>
+			<result column="title" property="title"/>
+		</association>
+	</resultMap>
+
+	<insert id="insert" useGeneratedKeys="true" keyProperty="id">
+		insert into `userfile` (state, remark, auditTime,
+		applyTime, auditor_id, applier_id,
+		score, image, fileType_id
+		)
+		values (#{state,jdbcType=TINYINT}, #{remark,jdbcType=VARCHAR},
+		#{auditTime,jdbcType=TIMESTAMP},
+		#{applyTime,jdbcType=TIMESTAMP}, #{auditor.id,jdbcType=BIGINT}, #{applier.id,jdbcType=BIGINT},
+		#{score,jdbcType=TINYINT}, #{image,jdbcType=VARCHAR},
+		#{fileType.id,jdbcType=BIGINT}
+		)
+	</insert>
+
+	<update id="updateByPrimaryKey">
+		update `userfile`
+		set state = #{state,jdbcType=TINYINT},
+		remark = #{remark,jdbcType=VARCHAR},
+		auditTime = #{auditTime,jdbcType=TIMESTAMP},
+		applyTime = #{applyTime,jdbcType=TIMESTAMP},
+		auditor_id = #{auditor.id,jdbcType=BIGINT},
+		applier_id = #{applier.id,jdbcType=BIGINT},
+		score = #{score,jdbcType=TINYINT},
+		image = #{image,jdbcType=VARCHAR},
+		fileType_id = #{fileType.id,jdbcType=BIGINT}
+		where id = #{id,jdbcType=BIGINT}
+	</update>
+
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap">
+		select f.id, f.state, f.remark, f.auditTime, f.applyTime, f.auditor_id, f.score, f.image, 
+		ap.id as ap_id, ap.username as ap_username, 
+		sd.id as sd_id, sd.title as sd_title
+		from `userfile` f join logininfo ap on f.applier_id =ap.id 
+		left join systemDictionaryItem sd on f.fileType_id = sd.id
+		where f.id = #{id,jdbcType=BIGINT}
+	</select>
+
+	<select id="selectAll" resultMap="BaseResultMap">
+		select id, state, remark, auditTime, applyTime, auditor_id, applier_id,
+		score, image, fileType_id
+		from `userfile`
+	</select>
+
+	<select id="listFilesByHasType" resultMap="UserListResultMap">
+		select f.id, f.state, f.remark, f.auditTime, f.applyTime, f.auditor_id, f.score, f.image,
+		sd.id as sd_id, sd.title as sd_title
+		from `userfile` f left join systemDictionaryItem sd on f.fileType_id = sd.id
+		where f.applier_id = #{logininfoId} 
+		<if test="hasType">
+			and f.fileType_id is not null
+		</if>
+		<if test="!hasType">
+			and f.fileType_id is null
+		</if>		
+	</select>
+
+	<sql id="base_where">
+		<where>
+			<if test="state>-1">
+				AND f.state = #{state}
+			</if>
+			<if test="beginTime!=null">
+				AND f.applyTime &gt;= #{beginTime}
+			</if>
+			<if test="endTime!=null">
+				AND f.applyTime &lt;= #{endTime}
+			</if>
+			<if test="applierId!=null">
+				AND f.applier_id = #{applierId}
+			</if>
+		</where>
+	</sql>
+	
+	<select id="queryForCount" resultType="int">
+		select count(f.id) from `userfile` f
+		<include refid="base_where"/>
+	</select>
+
+	<select id="query" resultMap="FullResultMap">
+		select f.id, f.state, f.remark, f.auditTime, f.applyTime, f.auditor_id, f.score, f.image,
+		ap.id as ap_id, ap.username as ap_username, au.id as au_id, au.username as au_username, 
+		sd.id as sd_id, sd.title as sd_title
+		from `userfile` f join logininfo ap on ap.id = f.applier_id 
+		left join logininfo au on au.id = f.auditor_id
+		join systemDictionaryItem sd on f.fileType_id = sd.id
+		<include refid="base_where"/>
+		<if test="pageSize>0">
+			limit #{start},#{pageSize}
+		</if>	
+	</select>
+	
+</mapper>
